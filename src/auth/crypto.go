@@ -7,16 +7,15 @@ import (
 	"io"
 )
 
-// CFBEncrypt cfb加密
-func (a *Auth) CFBEncrypt(s string) ([]byte, error) {
+// CFBEncrypter cfb加密
+func (a *Auth) CFBEncrypter(s string) ([]byte, error) {
 	// Load your secret key from a safe place and reuse it across multiple
 	// NewCipher calls. (Obviously don't use this example key for anything
 	// real.) If you want to convert a passphrase to a key, use a suitable
 	// package like bcrypt or scrypt.
-	key := []byte(a.Key)
 	plaintext := []byte(s)
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(a.Key)
 	if err != nil {
 		panic(err)
 	}
@@ -45,10 +44,9 @@ func (a *Auth) CFBDecrypter(s string) ([]byte, error) {
 	// NewCipher calls. (Obviously don't use this example key for anything
 	// real.) If you want to convert a passphrase to a key, use a suitable
 	// package like bcrypt or scrypt.
-	key := []byte(a.Key)
 	ciphertext := []byte(s)
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(a.Key)
 	if err != nil {
 		panic(err)
 	}
