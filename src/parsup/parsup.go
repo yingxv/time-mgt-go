@@ -72,7 +72,7 @@ func (p *ParamsSupport) ConvBase(i interface{}) (interface{}, error) {
 	case reflect.String:
 		return p.ConvStr(i.(string))
 	}
-	return v, nil
+	return i, nil
 
 }
 
