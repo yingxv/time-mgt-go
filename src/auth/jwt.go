@@ -3,13 +3,15 @@ package auth
 import (
 	"net/http"
 
+	"github.com/NgeKaworu/time-mgt-go/src/resultor"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/julienschmidt/httprouter"
 )
 
 // JWT json web token
-func (a *Auth) JWT(next http.Handler) http.Handler {
+func (a *Auth) JWT(next httprouter.Handle) httprouter.Handle {
 	//权限验证
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		auth := r.Header.Get("Authorization")
 		if auth != "" {
 			token, err := jwt.ParseWithClaims(auth, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -18,7 +20,7 @@ func (a *Auth) JWT(next http.Handler) http.Handler {
 			if err == nil {
 				if tk, ok := token.Claims.(*jwt.StandardClaims); ok && token.Valid {
 					r.Header.Set("uid", tk.Audience)
-					next.ServeHTTP(w, r)
+					next(w, r, ps)
 					return
 				}
 			}
@@ -26,8 +28,9 @@ func (a *Auth) JWT(next http.Handler) http.Handler {
 
 		// Request Basic Authentication otherwise
 		w.Header().Set("WWW-Authenticate", "Bearer realm=Restricted")
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	})
+		w.WriteHeader(http.StatusUnauthorized)
+		resultor.RetFail(w, "身份认证失败")
+	}
 }
 
 // GenJWT generate jwt
