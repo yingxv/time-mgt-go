@@ -14,7 +14,7 @@ import (
 
 	"github.com/NgeKaworu/time-mgt-go/src/auth"
 	"github.com/NgeKaworu/time-mgt-go/src/cors"
-	"github.com/NgeKaworu/time-mgt-go/src/dbengin"
+	"github.com/NgeKaworu/time-mgt-go/src/engine"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	a := auth.NewAuth(*k)
-	eng := dbengin.NewDbEngine()
+	eng := engine.NewDbEngine()
 	err := eng.Open(*mongo, *db, *dbinit, a)
 
 	if err != nil {
