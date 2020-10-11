@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/NgeKaworu/time-mgt-go/src/auth"
 	"github.com/NgeKaworu/time-mgt-go/src/models"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,6 +18,7 @@ import (
 type DbEngine struct {
 	MgEngine *mongo.Client //关系型数据库引擎
 	Mdb      string
+	Auth     *auth.Auth // 加解密客户端
 }
 
 // NewDbEngine 实例工厂
@@ -25,8 +27,9 @@ func NewDbEngine() *DbEngine {
 }
 
 // Open 开启连接池
-func (d *DbEngine) Open(mg, mdb string, initdb bool) error {
+func (d *DbEngine) Open(mg, mdb string, initdb bool, a *auth.Auth) error {
 	d.Mdb = mdb
+	d.Auth = a
 	ops := options.Client().ApplyURI(mg)
 	p := uint64(39000)
 	ops.MaxPoolSize = &p
