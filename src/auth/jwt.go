@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/NgeKaworu/time-mgt-go/src/resultor"
 	"github.com/dgrijalva/jwt-go"
@@ -15,7 +16,7 @@ func (a *Auth) JWT(next httprouter.Handle) httprouter.Handle {
 		auth := r.Header.Get("Authorization")
 		if auth != "" {
 			token, err := jwt.ParseWithClaims(auth, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-				return []byte(a.Key), nil
+				return a.Key, nil
 			})
 			if err == nil {
 				if tk, ok := token.Claims.(*jwt.StandardClaims); ok && token.Valid {
@@ -29,14 +30,15 @@ func (a *Auth) JWT(next httprouter.Handle) httprouter.Handle {
 		// Request Basic Authentication otherwise
 		w.Header().Set("WWW-Authenticate", "Bearer realm=Restricted")
 		w.WriteHeader(http.StatusUnauthorized)
-		resultor.RetFail(w, "身份认证失败")
+		resultor.RetFail(w, "身份认证失败，请重新登录")
 	}
 }
 
 // GenJWT generate jwt
 func (a *Auth) GenJWT(aud string) (string, error) {
-	claims := jwt.StandardClaims{
-		ExpiresAt: 60 * 60 * 24 * 15,
+	time.Now()
+	claims := &jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 15).Unix(),
 		Issuer:    "fuRan",
 		Audience:  aud,
 	}

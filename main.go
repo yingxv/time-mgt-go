@@ -44,7 +44,13 @@ func main() {
 	}
 
 	router := httprouter.New()
-	router.POST("/login", a.JWT(eng.Login))
+	// user ctrl
+	router.POST("/login", eng.Login)
+	router.POST("/register", eng.Regsiter)
+	router.GET("/profile", a.JWT(eng.Profile))
+	// tag ctrl
+
+	//record ctrl
 
 	srv := &http.Server{Handler: cors.CORS(router), ErrorLog: nil}
 	srv.Addr = *addr
