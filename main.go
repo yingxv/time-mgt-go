@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NgeKaworu/time-mgt-go/src/auth"
 	"github.com/NgeKaworu/time-mgt-go/src/cors"
 	"github.com/NgeKaworu/time-mgt-go/src/dbengin"
 	"github.com/julienschmidt/httprouter"
@@ -26,21 +27,24 @@ func main() {
 		addr   = flag.String("l", ":8000", "绑定Host地址")
 		dbinit = flag.Bool("i", false, "init database flag")
 		mongo  = flag.String("m", "mongodb://localhost:27017", "mongod addr flag")
-		db     = flag.String("db", "stock", "database name")
+		db     = flag.String("db", "time-mgt", "database name")
+		k      = flag.String("k", "f3fa39nui89Wi707", "iv key")
 	)
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
+	a := auth.NewAuth(*k)
 	eng := dbengin.NewDbEngine()
-	err := eng.Open(*mongo, *db, *dbinit)
+	err := eng.Open(*mongo, *db, *dbinit, a)
 
 	if err != nil {
 		log.Println(err.Error())
 	}
 
 	router := httprouter.New()
+	router.POST("/login", eng.Login)
 
 	srv := &http.Server{Handler: cors.CORS(router), ErrorLog: nil}
 	srv.Addr = *addr
