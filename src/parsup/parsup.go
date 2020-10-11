@@ -19,13 +19,38 @@ type ParamsSupport struct {
 }
 
 // ParSup 工厂方法
-func ParSup(isDeep, isConvOID, isConvTime, isDenyInject bool) *ParamsSupport {
+func ParSup() *ParamsSupport {
+	b := true
 	return &ParamsSupport{
-		IsDeep:       &isDeep,
-		IsConvOID:    &isConvOID,
-		IsConvTime:   &isConvTime,
-		IsDenyInject: &isDenyInject,
+		IsDeep:       &b,
+		IsConvOID:    &b,
+		IsConvTime:   &b,
+		IsDenyInject: &b,
 	}
+}
+
+// SetIsDeep 设置方法
+func (p *ParamsSupport) SetIsDeep(b bool) *ParamsSupport {
+	p.IsDeep = &b
+	return p
+}
+
+// SetIsConvOID 设置方法
+func (p *ParamsSupport) SetIsConvOID(b bool) *ParamsSupport {
+	p.IsConvOID = &b
+	return p
+}
+
+// SetIsConvTime 设置方法
+func (p *ParamsSupport) SetIsConvTime(b bool) *ParamsSupport {
+	p.IsConvTime = &b
+	return p
+}
+
+// SetIsDenyInject 设置方法
+func (p *ParamsSupport) SetIsDenyInject(b bool) *ParamsSupport {
+	p.IsDenyInject = &b
+	return p
 }
 
 // ConvBase base handler
@@ -74,7 +99,7 @@ func (p *ParamsSupport) ConvStr(s string) (interface{}, error) {
 
 // ConvMap map handler
 func (p *ParamsSupport) ConvMap(m map[string]interface{}) (map[string]interface{}, error) {
-	var res map[string]interface{}
+	res := make(map[string]interface{})
 	for k, v := range m {
 		dv, err := p.ConvBase(v)
 		if err != nil {
@@ -100,7 +125,7 @@ func (p *ParamsSupport) ConvSlice(s []interface{}) ([]interface{}, error) {
 
 // ConvJSON byte handler
 func (p *ParamsSupport) ConvJSON(s []byte) (map[string]interface{}, error) {
-	var m map[string]interface{}
+	m := make(map[string]interface{})
 	err := json.Unmarshal(s, &m)
 	if err != nil {
 		return nil, err
