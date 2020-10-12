@@ -80,7 +80,7 @@ func (p *ParamsSupport) ConvBase(i interface{}) (interface{}, error) {
 		break
 	case reflect.Struct:
 		if *p.IsDeep && *p.IsConvStruct {
-			return p.ConvStruct(v)
+			return p.ConvStruct(i)
 		}
 		break
 	case reflect.String:
@@ -148,7 +148,11 @@ func (p *ParamsSupport) ConvJSON(s []byte) (map[string]interface{}, error) {
 }
 
 // ConvStruct struct handler
-func (p *ParamsSupport) ConvStruct(val reflect.Value) (map[string]interface{}, error) {
+func (p *ParamsSupport) ConvStruct(s interface{}) (map[string]interface{}, error) {
+	val := reflect.ValueOf(s)
+	if val.Kind() != reflect.Struct {
+		return nil, errors.New("not a struct")
+	}
 	t := val.Type()
 	o := make(map[string]interface{})
 	for i := 0; i < t.NumField(); i++ {
