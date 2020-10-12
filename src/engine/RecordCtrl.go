@@ -211,6 +211,7 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 	match := bson.M{
 		"uid": uid,
 	}
+
 	p := make(map[string]interface{})
 	if len(body) != 0 {
 		p, err = parsup.ParSup().ConvJSON(body)
@@ -218,20 +219,19 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 			resultor.RetFail(w, err.Error())
 			return
 		}
-	}
-
-	if dateRange, ok := p["dateRange"].([]time.Time); ok {
-		if len(dateRange) == 2 {
-			match["createAt"] = bson.M{
-				"$gte": dateRange[0],
-				"$lte": dateRange[1],
+		if dateRange, ok := p["dateRange"].([]time.Time); ok {
+			if len(dateRange) == 2 {
+				match["createAt"] = bson.M{
+					"$gte": dateRange[0],
+					"$lte": dateRange[1],
+				}
 			}
 		}
-	}
 
-	if tids, ok := p["tids"].([]primitive.ObjectID); ok {
-		if len(tids) > 0 {
-			match["tid"] = bson.M{"$in": tids}
+		if tids, ok := p["tids"].([]primitive.ObjectID); ok {
+			if len(tids) > 0 {
+				match["tid"] = bson.M{"$in": tids}
+			}
 		}
 	}
 
