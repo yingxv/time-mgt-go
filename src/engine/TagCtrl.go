@@ -27,12 +27,13 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
+	defer r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
+		return
+	}
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
 		return
 	}
 
@@ -79,12 +80,13 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
+	defer r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
+		return
+	}
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
 		return
 	}
 

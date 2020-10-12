@@ -26,12 +26,13 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
+	defer r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
+		return
+	}
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
 		return
 	}
 
@@ -85,12 +86,13 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
+	defer r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
+		return
+	}
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
 		return
 	}
 
@@ -103,6 +105,7 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 	err = utils.Required(p, map[string]string{
 		"event": "请填写发生了什么",
 		"tid":   "请至少选一个标签",
+		"id":    "ID不能为空",
 	})
 
 	if err != nil {
@@ -199,16 +202,7 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
-	if err != nil {
-		resultor.RetFail(w, err.Error())
-		return
-	}
-
-	p, err := parsup.ParSup().ConvJSON(body)
+	defer r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
 		return
@@ -216,6 +210,14 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 
 	match := bson.M{
 		"uid": uid,
+	}
+	p := make(map[string]interface{})
+	if len(body) != 0 {
+		p, err = parsup.ParSup().ConvJSON(body)
+		if err != nil {
+			resultor.RetFail(w, err.Error())
+			return
+		}
 	}
 
 	if dateRange, ok := p["dateRange"].([]time.Time); ok {

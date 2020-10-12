@@ -20,12 +20,13 @@ import (
 // Login 登录
 func (d *DbEngine) Login(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
+	defer r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
+		return
+	}
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
 		return
 	}
 
@@ -85,12 +86,13 @@ func (d *DbEngine) Login(w http.ResponseWriter, r *http.Request, ps httprouter.P
 // Regsiter 注册
 func (d *DbEngine) Regsiter(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	body, err := ioutil.ReadAll(r.Body)
-	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
-		return
-	}
+	r.Body.Close()
 	if err != nil {
 		resultor.RetFail(w, err.Error())
+		return
+	}
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
 		return
 	}
 
