@@ -243,26 +243,25 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 				"preserveNullAndEmptyArrays": true,
 			},
 		},
-		{
-			"$group": bson.M{
-				"_id":      "$tid",
-				"deration": bson.M{"$sum": "$deration"},
-			},
-		},
-		{
-			"$sort": bson.M{
-				"deration": -1,
-			},
-		},
 	}
 
 	if tid, ok := match["tid"]; ok {
 		pipe = append(pipe, bson.M{
 			"$match": bson.M{
-				"_id": tid,
+				"tid": tid,
 			},
 		})
 	}
+
+	pipe = append(pipe,
+		bson.M{"$group": bson.M{
+			"_id":      "$tid",
+			"deration": bson.M{"$sum": "$deration"},
+		}},
+		bson.M{"$sort": bson.M{
+			"deration": -1,
+		}},
+	)
 
 	t := d.GetColl(models.TRecord)
 	cur, err := t.Aggregate(context.Background(), pipe)
