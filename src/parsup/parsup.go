@@ -16,16 +16,19 @@ type ParamsSupport struct {
 	IsConvOID    *bool // 转化ObjectID
 	IsConvTime   *bool // 转化时间对象
 	IsDenyInject *bool // 防注入
+	IsConvStruct *bool // 转结构
 }
 
 // ParSup 工厂方法
 func ParSup() *ParamsSupport {
-	b := true
+	t := true
+	f := false
 	return &ParamsSupport{
-		IsDeep:       &b,
-		IsConvOID:    &b,
-		IsConvTime:   &b,
-		IsDenyInject: &b,
+		IsDeep:       &t,
+		IsConvOID:    &t,
+		IsConvTime:   &t,
+		IsDenyInject: &t,
+		IsConvStruct: &f,
 	}
 }
 
@@ -53,10 +56,18 @@ func (p *ParamsSupport) SetIsDenyInject(b bool) *ParamsSupport {
 	return p
 }
 
+// SetIsConvStruct 设置方法
+func (p *ParamsSupport) SetIsConvStruct(b bool) *ParamsSupport {
+	p.IsConvStruct = &b
+	return p
+}
+
 // ConvBase base handler
 func (p *ParamsSupport) ConvBase(i interface{}) (interface{}, error) {
 	v := reflect.ValueOf(i)
 	switch v.Kind() {
+	case reflect.Invalid:
+		return nil, nil
 	case reflect.Map:
 		if *p.IsDeep {
 			return p.ConvMap(i.(map[string]interface{}))
@@ -67,8 +78,11 @@ func (p *ParamsSupport) ConvBase(i interface{}) (interface{}, error) {
 			return p.ConvSlice(i.([]interface{}))
 		}
 		break
-	case reflect.Invalid:
-		return nil, nil
+	case reflect.Struct:
+		if *p.IsDeep && *p.IsConvStruct {
+			return p.ConvStruct(v)
+		}
+		break
 	case reflect.String:
 		return p.ConvStr(i.(string))
 	}
@@ -131,4 +145,50 @@ func (p *ParamsSupport) ConvJSON(s []byte) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return p.ConvMap(m)
+}
+
+// ConvStruct struct handler
+func (p *ParamsSupport) ConvStruct(val reflect.Value) (map[string]interface{}, error) {
+	t := val.Type()
+	o := make(map[string]interface{})
+	for i := 0; i < t.NumField(); i++ {
+		var omitempty, skip, omitzero bool
+		tagsName := t.Field(i).Name
+		cur := val.Field(i)
+		if tags, ok := t.Field(i).Tag.Lookup("parsup"); ok {
+			tagsArr := strings.Split(tags, ",")
+			tagsName = tagsArr[0]
+			for _, v := range tagsArr {
+				switch v {
+				case "omitempty":
+					omitempty = true
+				case "omitzero":
+					omitzero = true
+				case "-":
+					skip = true
+				}
+			}
+		}
+
+		if skip || (cur.Kind() == reflect.Ptr && cur.IsNil() && omitempty) || (cur.IsZero() && omitzero) {
+			continue
+		}
+
+		ele, err := p.ConvBase(p.safeInterface(cur))
+
+		if err != nil {
+			return nil, err
+		}
+
+		o[tagsName] = ele
+	}
+
+	return o, nil
+}
+
+func (p *ParamsSupport) safeInterface(v reflect.Value) interface{} {
+	if v.IsValid() && v.CanInterface() {
+		return v.Interface()
+	}
+	return nil
 }
