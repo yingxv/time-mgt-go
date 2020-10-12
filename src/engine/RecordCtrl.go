@@ -219,7 +219,7 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 			resultor.RetFail(w, err.Error())
 			return
 		}
-		if dateRange, ok := p["dateRange"].([]time.Time); ok {
+		if dateRange, ok := p["dateRange"].([]interface{}); ok {
 			if len(dateRange) == 2 {
 				match["createAt"] = bson.M{
 					"$gte": dateRange[0],
@@ -228,7 +228,7 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 			}
 		}
 
-		if tids, ok := p["tids"].([]primitive.ObjectID); ok {
+		if tids, ok := p["tids"].([]interface{}); ok {
 			if len(tids) > 0 {
 				match["tid"] = bson.M{"$in": tids}
 			}
