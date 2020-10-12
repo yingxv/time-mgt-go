@@ -101,7 +101,7 @@ func (d *DbEngine) Open(mg, mdb string, initdb bool, a *auth.Auth) error {
 			{Keys: bsonx.Doc{bsonx.Elem{Key: "uid", Value: bsonx.Int32(1)}}},
 			{Keys: bsonx.Doc{
 				bsonx.Elem{Key: "uid", Value: bsonx.Int32(1)},
-				bsonx.Elem{Key: "uid", Value: bsonx.Int32(1)},
+				bsonx.Elem{Key: "name", Value: bsonx.Int32(1)},
 			}, Options: options.Index().SetUnique(true)},
 			{Keys: bsonx.Doc{bsonx.Elem{Key: "createAt", Value: bsonx.Int32(-1)}}},
 		})
