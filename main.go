@@ -54,6 +54,10 @@ func main() {
 	router.GET("/v1/tag/list", a.JWT(eng.ListTag))
 	router.DELETE("/v1/tag/:id", a.JWT(eng.RemoveTag))
 	//record ctrl
+	router.POST("/v1/record/create", a.JWT(eng.AddRecord))
+	router.PUT("/v1/record/update", a.JWT(eng.SetRecord))
+	router.GET("/v1/record/list", a.JWT(eng.ListRecord))
+	router.DELETE("/v1/record/:id", a.JWT(eng.RemoveRecord))
 
 	srv := &http.Server{Handler: cors.CORS(router), ErrorLog: nil}
 	srv.Addr = *addr

@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/NgeKaworu/time-mgt-go/src/models"
@@ -18,8 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// AddTag 添加标签
-func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// AddRecord 添加记录
+func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err.Error())
@@ -43,8 +42,8 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	err = utils.Required(p, map[string]string{
-		"name":  "标签名不能为空",
-		"color": "颜色不能为空",
+		"event": "请填写发生了什么",
+		"tid":   "请至少选一个标签",
 	})
 
 	if err != nil {
@@ -52,26 +51,33 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	t := d.GetColl(models.TTag)
+	t := d.GetColl(models.TRecord)
+	var deration time.Duration
+
+	last := t.FindOne(context.Background(), bson.M{"uid": uid}, options.FindOne().SetSort(bson.M{"createAt": -1}))
+	if last.Err() == nil {
+		var record models.Record
+		err = last.Decode(&record)
+		if err == nil {
+			deration = time.Now().Local().Sub(*record.CreateAt)
+		}
+	}
+
 	p["uid"] = uid
 	p["createAt"] = time.Now().Local()
+	p["deration"] = deration
 
 	res, err := t.InsertOne(context.Background(), p)
 	if err != nil {
-		errMsg := err.Error()
-		if strings.Contains(errMsg, "dup key") {
-			errMsg = "该标签已被创建"
-		}
-
-		resultor.RetFail(w, errMsg)
+		resultor.RetFail(w, err.Error())
 		return
 	}
 
 	resultor.RetOk(w, res.InsertedID.(primitive.ObjectID).Hex())
 }
 
-// SetTag 更新标签
-func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// SetRecord 更新记录
+func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err.Error())
@@ -93,17 +99,18 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 		resultor.RetFail(w, err.Error())
 		return
 	}
+
 	err = utils.Required(p, map[string]string{
-		"id":    "标签不能id为空",
-		"name":  "标签名不能为空",
-		"color": "颜色不能为空",
+		"event": "请填写发生了什么",
+		"tid":   "请至少选一个标签",
 	})
+
 	if err != nil {
 		resultor.RetFail(w, err.Error())
 		return
 	}
 
-	t := d.GetColl(models.TTag)
+	t := d.GetColl(models.TRecord)
 	p["uid"] = uid
 	p["updateAt"] = time.Now().Local()
 
@@ -122,8 +129,8 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 	resultor.RetOk(w, "修改成功")
 }
 
-// RemoveTag 删除标签
-func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// RemoveRecord 删除记录
+func (d *DbEngine) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err.Error())
@@ -137,23 +144,6 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 
 	t := d.GetColl(models.TRecord)
 
-	used, err := t.CountDocuments(context.Background(), bson.M{
-		"uid": uid,
-		"tid": id,
-	})
-
-	if err != nil {
-		resultor.RetFail(w, err.Error())
-		return
-	}
-
-	if used != 0 {
-		resultor.RetFail(w, "不能删除正在使用的标签。")
-		return
-	}
-
-	t = d.GetColl(models.TTag)
-
 	res := t.FindOneAndDelete(context.Background(), bson.M{"_id": id, "uid": uid})
 
 	if res.Err() != nil {
@@ -164,8 +154,8 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 	resultor.RetOk(w, "删除成功")
 }
 
-// ListTag tag列表
-func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// ListRecord record列表
+func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	q := r.URL.Query()
 	l := q.Get("limit")
 	s := q.Get("skip")
@@ -179,18 +169,18 @@ func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter
 	limit, _ := strconv.ParseInt(l, 10, 64)
 	skip, _ := strconv.ParseInt(s, 10, 64)
 
-	t := d.GetColl(models.TTag)
+	t := d.GetColl(models.TRecord)
 
 	cur, err := t.Find(context.Background(), bson.M{
 		"uid": uid,
-	}, options.Find().SetSkip(skip).SetLimit(limit))
+	}, options.Find().SetSort(bson.M{"createAt": -1}).SetSkip(skip).SetLimit(limit))
 
 	if err != nil {
 		resultor.RetFail(w, err.Error())
 		return
 	}
 
-	list := make([]models.Tag, 0)
+	list := make([]models.Record, 0)
 
 	err = cur.All(context.Background(), &list)
 	if err != nil {
