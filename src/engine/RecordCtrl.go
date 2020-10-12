@@ -256,6 +256,14 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 		},
 	}
 
+	if tid, ok := match["tid"]; ok {
+		pipe = append(pipe, bson.M{
+			"$match": bson.M{
+				"_id": tid,
+			},
+		})
+	}
+
 	t := d.GetColl(models.TRecord)
 	cur, err := t.Aggregate(context.Background(), pipe)
 
