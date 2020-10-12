@@ -49,7 +49,10 @@ func main() {
 	router.POST("/register", eng.Regsiter)
 	router.GET("/profile", a.JWT(eng.Profile))
 	// tag ctrl
-
+	router.POST("/v1/tag/create", a.JWT(eng.AddTag))
+	router.PUT("/v1/tag/update", a.JWT(eng.SetTag))
+	router.GET("/v1/tag/list", a.JWT(eng.ListTag))
+	router.DELETE("/v1/tag/:id", a.JWT(eng.RemoveTag))
 	//record ctrl
 
 	srv := &http.Server{Handler: cors.CORS(router), ErrorLog: nil}
