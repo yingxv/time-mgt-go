@@ -58,6 +58,7 @@ func main() {
 	router.PUT("/v1/record/update", a.JWT(eng.SetRecord))
 	router.GET("/v1/record/list", a.JWT(eng.ListRecord))
 	router.DELETE("/v1/record/:id", a.JWT(eng.RemoveRecord))
+	router.POST("/v1/record/statistic", a.JWT(eng.StatisticRecord))
 
 	srv := &http.Server{Handler: cors.CORS(router), ErrorLog: nil}
 	srv.Addr = *addr

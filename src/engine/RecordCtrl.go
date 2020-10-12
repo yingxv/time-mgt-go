@@ -189,3 +189,84 @@ func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	resultor.RetOk(w, list)
 }
+
+// StatisticRecord 统计record
+func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
+	if err != nil {
+		resultor.RetFail(w, err.Error())
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if len(body) == 0 {
+		resultor.RetFail(w, "not has body")
+		return
+	}
+	if err != nil {
+		resultor.RetFail(w, err.Error())
+		return
+	}
+
+	p, err := parsup.ParSup().ConvJSON(body)
+	if err != nil {
+		resultor.RetFail(w, err.Error())
+		return
+	}
+
+	match := bson.M{
+		"uid": uid,
+	}
+
+	if dateRange, ok := p["dateRange"].([]time.Time); ok {
+		if len(dateRange) == 2 {
+			match["createAt"] = bson.M{
+				"$gte": dateRange[0],
+				"$lte": dateRange[1],
+			}
+		}
+	}
+
+	if tids, ok := p["tids"].([]primitive.ObjectID); ok {
+		if len(tids) > 0 {
+			match["tid"] = bson.M{"$in": tids}
+		}
+	}
+
+	pipe := []bson.M{
+		{"$match": match},
+		{
+			"$unwind": bson.M{
+				"path":                       "$tid",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id":      "$tid",
+				"deration": bson.M{"$sum": "$deration"},
+			},
+		},
+		{
+			"$sort": bson.M{
+				"deration": -1,
+			},
+		},
+	}
+
+	t := d.GetColl(models.TRecord)
+	cur, err := t.Aggregate(context.Background(), pipe)
+
+	if err != nil {
+		resultor.RetFail(w, err.Error())
+		return
+	}
+	record := make([]models.Record, 0)
+	err = cur.All(context.Background(), &record)
+	if err != nil {
+		resultor.RetFail(w, err.Error())
+		return
+	}
+
+	resultor.RetOk(w, record)
+}
