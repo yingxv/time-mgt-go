@@ -22,14 +22,15 @@ type DbEngine struct {
 }
 
 // NewDbEngine 实例工厂
-func NewDbEngine() *DbEngine {
-	return &DbEngine{}
+func NewDbEngine(a *auth.Auth) *DbEngine {
+	return &DbEngine{
+		Auth: a,
+	}
 }
 
 // Open 开启连接池
-func (d *DbEngine) Open(mg, mdb string, initdb bool, a *auth.Auth) error {
+func (d *DbEngine) Open(mg, mdb string, initdb bool) error {
 	d.Mdb = mdb
-	d.Auth = a
 	ops := options.Client().ApplyURI(mg)
 	p := uint64(39000)
 	ops.MaxPoolSize = &p

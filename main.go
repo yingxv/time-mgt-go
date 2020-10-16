@@ -36,8 +36,8 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	a := auth.NewAuth(*k)
-	eng := engine.NewDbEngine()
-	err := eng.Open(*mongo, *db, *dbinit, a)
+	eng := engine.NewDbEngine(a)
+	err := eng.Open(*mongo, *db, *dbinit)
 
 	if err != nil {
 		log.Println(err.Error())
