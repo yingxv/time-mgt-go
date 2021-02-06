@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/NgeKaworu/time-mgt-go/src/auth"
 	"github.com/NgeKaworu/time-mgt-go/src/models"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,14 +17,11 @@ import (
 type DbEngine struct {
 	MgEngine *mongo.Client //关系型数据库引擎
 	Mdb      string
-	Auth     *auth.Auth // 加解密客户端
 }
 
 // NewDbEngine 实例工厂
-func NewDbEngine(a *auth.Auth) *DbEngine {
-	return &DbEngine{
-		Auth: a,
-	}
+func NewDbEngine() *DbEngine {
+	return &DbEngine{}
 }
 
 // Open 开启连接池
@@ -69,22 +65,11 @@ func (d *DbEngine) Open(mg, mdb string, initdb bool) error {
 			panic(err)
 		}
 		defer session.Disconnect(context.Background())
-		// 用户表
-		t := session.Database(mdb).Collection(models.TUser)
-		indexView := t.Indexes()
-		_, err = indexView.CreateMany(context.Background(), []mongo.IndexModel{
-			{Keys: bsonx.Doc{bsonx.Elem{Key: "email", Value: bsonx.Int32(1)}}, Options: options.Index().SetUnique(true)},
-			{Keys: bsonx.Doc{bsonx.Elem{Key: "name", Value: bsonx.Int32(1)}}},
-			{Keys: bsonx.Doc{bsonx.Elem{Key: "createAt", Value: bsonx.Int32(-1)}}},
-		})
-		if err != nil {
-			log.Println(err)
-		}
 
 		// 记录表
-		t = session.Database(mdb).Collection(models.TRecord)
-		indexView = t.Indexes()
-		_, err = indexView.CreateMany(context.Background(), []mongo.IndexModel{
+		t := session.Database(mdb).Collection(models.TRecord)
+		indexView := t.Indexes()
+		_, err := indexView.CreateMany(context.Background(), []mongo.IndexModel{
 			{Keys: bsonx.Doc{bsonx.Elem{Key: "uid", Value: bsonx.Int32(1)}}},
 			{Keys: bsonx.Doc{bsonx.Elem{Key: "tid", Value: bsonx.Int32(1)}}},
 			{Keys: bsonx.Doc{bsonx.Elem{Key: "createAt", Value: bsonx.Int32(-1)}}},
@@ -109,17 +94,6 @@ func (d *DbEngine) Open(mg, mdb string, initdb bool) error {
 		if err != nil {
 			log.Println(err)
 		}
-
-		// // 权重
-		// weight := session.Database(mdb).Collection(stock.TWeight)
-		// indexView = weight.Indexes()
-		// _, err = indexView.CreateMany(context.Background(), []mongo.IndexModel{
-		// 	{Keys: bsonx.Doc{bsonx.Elem{Key: "create_date", Value: bsonx.Int32(-1)}}},
-		// 	{Keys: bsonx.Doc{bsonx.Elem{Key: "name", Value: bsonx.Int32(1)}}},
-		// })
-		// if err != nil {
-		// 	log.Println(err)
-		// }
 
 	}
 

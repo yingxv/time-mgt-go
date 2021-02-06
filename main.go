@@ -28,15 +28,15 @@ func main() {
 		dbinit = flag.Bool("i", false, "init database flag")
 		mongo  = flag.String("m", "mongodb://localhost:27017", "mongod addr flag")
 		db     = flag.String("db", "time-mgt", "database name")
-		k      = flag.String("k", "f3fa39nui89Wi707", "iv key")
+		ucHost = flag.String("uc", "http://localhost:8011", "user center host")
 	)
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	a := auth.NewAuth(*k)
-	eng := engine.NewDbEngine(a)
+	auth := auth.NewAuth(ucHost)
+	eng := engine.NewDbEngine()
 	err := eng.Open(*mongo, *db, *dbinit)
 
 	if err != nil {
@@ -44,21 +44,17 @@ func main() {
 	}
 
 	router := httprouter.New()
-	// user ctrl
-	router.POST("/login", eng.Login)
-	router.POST("/register", eng.Regsiter)
-	router.GET("/profile", a.JWT(eng.Profile))
 	// tag ctrl
-	router.POST("/v1/tag/create", a.JWT(eng.AddTag))
-	router.PUT("/v1/tag/update", a.JWT(eng.SetTag))
-	router.GET("/v1/tag/list", a.JWT(eng.ListTag))
-	router.DELETE("/v1/tag/:id", a.JWT(eng.RemoveTag))
+	router.POST("/v1/tag/create", auth.IsLogin(eng.AddTag))
+	router.PUT("/v1/tag/update", auth.IsLogin(eng.SetTag))
+	router.GET("/v1/tag/list", auth.IsLogin(eng.ListTag))
+	router.DELETE("/v1/tag/:id", auth.IsLogin(eng.RemoveTag))
 	//record ctrl
-	router.POST("/v1/record/create", a.JWT(eng.AddRecord))
-	router.PUT("/v1/record/update", a.JWT(eng.SetRecord))
-	router.GET("/v1/record/list", a.JWT(eng.ListRecord))
-	router.DELETE("/v1/record/:id", a.JWT(eng.RemoveRecord))
-	router.POST("/v1/record/statistic", a.JWT(eng.StatisticRecord))
+	router.POST("/v1/record/create", auth.IsLogin(eng.AddRecord))
+	router.PUT("/v1/record/update", auth.IsLogin(eng.SetRecord))
+	router.GET("/v1/record/list", auth.IsLogin(eng.ListRecord))
+	router.DELETE("/v1/record/:id", auth.IsLogin(eng.RemoveRecord))
+	router.POST("/v1/record/statistic", auth.IsLogin(eng.StatisticRecord))
 
 	srv := &http.Server{Handler: cors.CORS(router), ErrorLog: nil}
 	srv.Addr = *addr
