@@ -211,9 +211,8 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 		"uid": uid,
 	}
 
-	p := make(map[string]interface{})
 	if len(body) != 0 {
-		p, err = parsup.ParSup().ConvJSON(body)
+		p, err := parsup.ParSup().ConvJSON(body)
 		if err != nil {
 			resultor.RetFail(w, err.Error())
 			return
