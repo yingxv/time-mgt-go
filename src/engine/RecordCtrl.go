@@ -43,8 +43,7 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	err = utils.Required(p, map[string]string{
-		"event": "请填写发生了什么",
-		"tid":   "请至少选一个标签",
+		"tid": "请至少选一个标签",
 	})
 
 	if err != nil {
