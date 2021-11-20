@@ -9,13 +9,14 @@ import (
 
 // RetOk 成功处理器
 func RetOk(w http.ResponseWriter, data interface{}) {
+
 	res := map[string]interface{}{
 		"ok":   true,
 		"data": data,
 	}
 	b, err := json.Marshal(res)
 	if err != nil {
-		RetFail(w, err.Error())
+		RetFail(w, err)
 		return
 	}
 
@@ -23,7 +24,9 @@ func RetOk(w http.ResponseWriter, data interface{}) {
 }
 
 // RetFail 失败处理器
-func RetFail(w http.ResponseWriter, errMsg string) {
+func RetFail(w http.ResponseWriter, e error) {
+	errMsg := e.Error()
+
 	res := map[string]interface{}{
 		"ok":     false,
 		"errMsg": errMsg,
@@ -34,6 +37,22 @@ func RetFail(w http.ResponseWriter, errMsg string) {
 		log.Println(errMsg)
 		log.Println(err.Error())
 		log.Printf("%+v", res)
+		return
+	}
+
+	fmt.Fprint(w, string(b))
+}
+
+// RetOkWithTotal 成功处理器
+func RetOkWithTotal(w http.ResponseWriter, data interface{}, total int64) {
+	res := map[string]interface{}{
+		"ok":    true,
+		"data":  data,
+		"total": total,
+	}
+	b, err := json.Marshal(res)
+	if err != nil {
+		RetFail(w, err)
 		return
 	}
 

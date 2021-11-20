@@ -36,5 +36,4 @@ jobs:
             cd time-mgt
             git checkout master
             git pull
-
             sh boot.sh

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -22,24 +23,24 @@ import (
 func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
+		resultor.RetFail(w, errors.New("not has body"))
 		return
 	}
 
 	p, err := parsup.ParSup().ConvJSON(body)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -49,7 +50,7 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 	})
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -64,7 +65,7 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 			errMsg = "该标签已被创建"
 		}
 
-		resultor.RetFail(w, errMsg)
+		resultor.RetFail(w, errors.New(errMsg))
 		return
 	}
 
@@ -75,24 +76,24 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
+		resultor.RetFail(w, errors.New("not has body"))
 		return
 	}
 
 	p, err := parsup.ParSup().ConvJSON(body)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	err = utils.Required(p, map[string]string{
@@ -101,7 +102,7 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 		"color": "颜色不能为空",
 	})
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -117,7 +118,7 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 		bson.M{"$set": p},
 	)
 	if res.Err() != nil {
-		resultor.RetFail(w, res.Err().Error())
+		resultor.RetFail(w, res.Err())
 		return
 	}
 
@@ -128,12 +129,12 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	id, err := primitive.ObjectIDFromHex(ps.ByName("id"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -145,12 +146,12 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 	})
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
 	if used != 0 {
-		resultor.RetFail(w, "不能删除正在使用的标签。")
+		resultor.RetFail(w, errors.New("不能删除正在使用的标签。"))
 		return
 	}
 
@@ -159,7 +160,7 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 	res := t.FindOneAndDelete(context.Background(), bson.M{"_id": id, "uid": uid})
 
 	if res.Err() != nil {
-		resultor.RetFail(w, res.Err().Error())
+		resultor.RetFail(w, res.Err())
 		return
 	}
 
@@ -174,7 +175,7 @@ func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -188,7 +189,7 @@ func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter
 	}, options.Find().SetSkip(skip).SetLimit(limit))
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -196,7 +197,7 @@ func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	err = cur.All(context.Background(), &list)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	resultor.RetOk(w, list)

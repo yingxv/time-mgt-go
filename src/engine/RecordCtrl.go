@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -21,24 +22,24 @@ import (
 func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
+		resultor.RetFail(w, errors.New("not has body"))
 		return
 	}
 
 	p, err := parsup.ParSup().ConvJSON(body)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -47,7 +48,7 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 	})
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -69,7 +70,7 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 
 	res, err := t.InsertOne(context.Background(), p)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -80,24 +81,24 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	if len(body) == 0 {
-		resultor.RetFail(w, "not has body")
+		resultor.RetFail(w, errors.New("not has body"))
 		return
 	}
 
 	p, err := parsup.ParSup().ConvJSON(body)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -108,7 +109,7 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 	})
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -124,7 +125,7 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 		bson.M{"$set": p},
 	)
 	if res.Err() != nil {
-		resultor.RetFail(w, res.Err().Error())
+		resultor.RetFail(w, res.Err())
 		return
 	}
 
@@ -135,12 +136,12 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 func (d *DbEngine) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	id, err := primitive.ObjectIDFromHex(ps.ByName("id"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -149,7 +150,7 @@ func (d *DbEngine) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httpr
 	res := t.FindOneAndDelete(context.Background(), bson.M{"_id": id, "uid": uid})
 
 	if res.Err() != nil {
-		resultor.RetFail(w, res.Err().Error())
+		resultor.RetFail(w, res.Err())
 		return
 	}
 
@@ -164,7 +165,7 @@ func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprou
 
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -173,12 +174,21 @@ func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprou
 
 	t := d.GetColl(models.TRecord)
 
+	total, err := t.CountDocuments(context.Background(), bson.M{
+		"uid": uid,
+	})
+
+	if err != nil {
+		resultor.RetFail(w, err)
+		return
+	}
+
 	cur, err := t.Find(context.Background(), bson.M{
 		"uid": uid,
 	}, options.Find().SetSort(bson.M{"createAt": -1}).SetSkip(skip).SetLimit(limit))
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -186,24 +196,24 @@ func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprou
 
 	err = cur.All(context.Background(), &list)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
-	resultor.RetOk(w, list)
+	resultor.RetOkWithTotal(w, list, total)
 }
 
 // StatisticRecord 统计record
 func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
@@ -214,7 +224,7 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 	if len(body) != 0 {
 		p, err := parsup.ParSup().ConvJSON(body)
 		if err != nil {
-			resultor.RetFail(w, err.Error())
+			resultor.RetFail(w, err)
 			return
 		}
 		if dateRange, ok := p["dateRange"].([]interface{}); ok {
@@ -265,13 +275,13 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 	cur, err := t.Aggregate(context.Background(), pipe)
 
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 	record := make([]models.Record, 0)
 	err = cur.All(context.Background(), &record)
 	if err != nil {
-		resultor.RetFail(w, err.Error())
+		resultor.RetFail(w, err)
 		return
 	}
 
