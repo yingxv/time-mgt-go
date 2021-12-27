@@ -1,4 +1,4 @@
-package engine
+package app
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 )
 
 // AddTag 添加标签
-func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -54,7 +54,7 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	t := d.GetColl(models.TTag)
+	t := d.mongo.GetColl(models.TTag)
 	p["uid"] = uid
 	p["createAt"] = time.Now().Local()
 
@@ -73,7 +73,7 @@ func (d *DbEngine) AddTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 }
 
 // SetTag 更新标签
-func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -106,7 +106,7 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	t := d.GetColl(models.TTag)
+	t := d.mongo.GetColl(models.TTag)
 	p["uid"] = uid
 	p["updateAt"] = time.Now().Local()
 
@@ -126,7 +126,7 @@ func (d *DbEngine) SetTag(w http.ResponseWriter, r *http.Request, ps httprouter.
 }
 
 // RemoveTag 删除标签
-func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -138,7 +138,7 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	t := d.GetColl(models.TRecord)
+	t := d.mongo.GetColl(models.TRecord)
 
 	used, err := t.CountDocuments(context.Background(), bson.M{
 		"uid": uid,
@@ -155,7 +155,7 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	t = d.GetColl(models.TTag)
+	t = d.mongo.GetColl(models.TTag)
 
 	res := t.FindOneAndDelete(context.Background(), bson.M{"_id": id, "uid": uid})
 
@@ -168,7 +168,7 @@ func (d *DbEngine) RemoveTag(w http.ResponseWriter, r *http.Request, ps httprout
 }
 
 // ListTag tag列表
-func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	q := r.URL.Query()
 	l := q.Get("limit")
 	s := q.Get("skip")
@@ -182,7 +182,7 @@ func (d *DbEngine) ListTag(w http.ResponseWriter, r *http.Request, ps httprouter
 	limit, _ := strconv.ParseInt(l, 10, 64)
 	skip, _ := strconv.ParseInt(s, 10, 64)
 
-	t := d.GetColl(models.TTag)
+	t := d.mongo.GetColl(models.TTag)
 
 	cur, err := t.Find(context.Background(), bson.M{
 		"uid": uid,

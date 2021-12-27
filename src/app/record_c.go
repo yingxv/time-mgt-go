@@ -1,4 +1,4 @@
-package engine
+package app
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 )
 
 // AddRecord 添加记录
-func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) AddRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -52,7 +52,7 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	t := d.GetColl(models.TRecord)
+	t := d.mongo.GetColl(models.TRecord)
 	var deration time.Duration
 
 	last := t.FindOne(context.Background(), bson.M{"uid": uid}, options.FindOne().SetSort(bson.M{"createAt": -1}))
@@ -78,7 +78,7 @@ func (d *DbEngine) AddRecord(w http.ResponseWriter, r *http.Request, ps httprout
 }
 
 // SetRecord 更新记录
-func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) SetRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -113,7 +113,7 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	t := d.GetColl(models.TRecord)
+	t := d.mongo.GetColl(models.TRecord)
 	p["uid"] = uid
 	p["updateAt"] = time.Now().Local()
 
@@ -133,7 +133,7 @@ func (d *DbEngine) SetRecord(w http.ResponseWriter, r *http.Request, ps httprout
 }
 
 // RemoveRecord 删除记录
-func (d *DbEngine) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -145,7 +145,7 @@ func (d *DbEngine) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 
-	t := d.GetColl(models.TRecord)
+	t := d.mongo.GetColl(models.TRecord)
 
 	res := t.FindOneAndDelete(context.Background(), bson.M{"_id": id, "uid": uid})
 
@@ -158,7 +158,7 @@ func (d *DbEngine) RemoveRecord(w http.ResponseWriter, r *http.Request, ps httpr
 }
 
 // ListRecord record列表
-func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) ListRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	q := r.URL.Query()
 	l := q.Get("limit")
 	s := q.Get("skip")
@@ -172,7 +172,7 @@ func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprou
 	limit, _ := strconv.ParseInt(l, 10, 64)
 	skip, _ := strconv.ParseInt(s, 10, 64)
 
-	t := d.GetColl(models.TRecord)
+	t := d.mongo.GetColl(models.TRecord)
 
 	total, err := t.CountDocuments(context.Background(), bson.M{
 		"uid": uid,
@@ -203,7 +203,7 @@ func (d *DbEngine) ListRecord(w http.ResponseWriter, r *http.Request, ps httprou
 }
 
 // StatisticRecord 统计record
-func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (d *App) StatisticRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	uid, err := primitive.ObjectIDFromHex(r.Header.Get("uid"))
 	if err != nil {
 		resultor.RetFail(w, err)
@@ -271,7 +271,7 @@ func (d *DbEngine) StatisticRecord(w http.ResponseWriter, r *http.Request, ps ht
 		}},
 	)
 
-	t := d.GetColl(models.TRecord)
+	t := d.mongo.GetColl(models.TRecord)
 	cur, err := t.Aggregate(context.Background(), pipe)
 
 	if err != nil {
